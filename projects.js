@@ -1,29 +1,5 @@
 window.logicNestProjects = [
-  {
-    title: "Nexus AI",
-    description: "Home Command Center — an AI-powered dashboard and productivity workspace built for everyday control and organization.",
-    tags: ["AI", "Dashboard", "Web", "Productivity"],
-    icon: "NX",
-    image: "Gemini_Generated_Image_zbt2ejzbt2ejzbt2.png",
-    demo: "https://career-with-nexus-ai.lovable.app/home",
-    source: ""
-  },
-  {
-    title: "Interactive Coding Lab",
-    description: "A browser-based playground for experimenting with code, concepts, and challenges.",
-    tags: ["HTML", "CSS", "JavaScript", "Web"],
-    icon: "</>",
-    image: "Gemini_Generated_Image_f72yx0f72yx0f72y.png",
-    demo: "https://github.com/ParthPantfromPython/Logic-Nest",
-    source: "https://github.com/ParthPantfromPython/Logic-Nest"
-  },
-  {
-    title: "Python From Zero",
-    description: "A beginner-friendly learning path where every lesson leads to something practical.",
-    tags: ["Python", "Learning", "Projects"],
-    icon: "PY",
-    image: "Gemini_Generated_Image_f72yx0f72yx0f72y.png",
-    demo: "https://github.com/ParthPantfromPython",
-    source: "https://github.com/ParthPantfromPython"
-  }
+  { title:'Nexus AI', description:'Home Command Center — an AI-powered dashboard and productivity workspace.', tags:['AI','Dashboard','Web','Productivity'], icon:'NX', image:'Gemini_Generated_Image_zbt2ejzbt2ejzbt2.png', demo:'https://career-with-nexus-ai.lovable.app/home', source:'' },
+  { title:'Interactive Periodic Table', description:'🌈 Modern chemistry explorer with an interactive periodic table experience.', tags:['Chemistry','Education','Interactive','JavaScript'], icon:'🧪', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://parthpantfrompython.github.io/Website/index.html', source:'' }
 ];
+(function syncLogicNestProjects(){const cfg=window.LOGIC_NEST_SUPABASE;if(!cfg)return;const script=document.createElement('script');script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';script.onload=async()=>{try{const sb=supabase.createClient(cfg.url,cfg.publishableKey);const {data,error}=await sb.from('projects').select('*').eq('published',true).order('created_at',{ascending:true});if(error||!Array.isArray(data)||!data.length)return;window.logicNestProjects=data.map(p=>({title:p.title,description:p.description,tags:p.tags||[],icon:p.icon||'LN',image:p.image_url||'',demo:p.demo_url||'',source:p.source_url||''}));document.dispatchEvent(new CustomEvent('logicNestProjectsReady'));}catch(_){}};document.head.appendChild(script)})();
