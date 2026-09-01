@@ -1,6 +1,8 @@
 window.logicNestProjects = [
   { title:'Nexus AI', description:'Home Command Center — an AI-powered dashboard and productivity workspace.', tags:['AI','Dashboard','Web','Productivity'], icon:'NX', image:'Gemini_Generated_Image_zbt2ejzbt2ejzbt2.png', demo:'https://career-with-nexus-ai.lovable.app/home', source:'' },
-  { title:'Interactive Periodic Table', description:'🌈 Modern chemistry explorer with an interactive periodic table experience.', tags:['Chemistry','Education','Interactive','JavaScript'], icon:'🧪', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://parthpantfrompython.github.io/Website/index.html', source:'' }
+  { title:'Interactive Periodic Table', description:'🌈 Modern chemistry explorer with an interactive periodic table experience.', tags:['Chemistry','Education','Interactive','JavaScript'], icon:'🧪', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://parthpantfrompython.github.io/Website/index.html', source:'' },
+  { title:'Indigenous Art & Nature', description:'Explore indigenous art, culture, nature, and visual storytelling through an interactive web experience.', tags:['Art','Culture','Nature','Education','Web'], icon:'🌿', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://parthpantfrompython.github.io/Website/Home.html', source:'' },
+  { title:'JARVIS Online', description:'AI Assistant Dashboard with Voice, Chat & PC Control.', tags:['AI','Assistant','Voice','Chat','Dashboard'], icon:'JX', image:'Gemini_Generated_Image_zbt2ejzbt2ejzbt2.png', demo:'https://jarvisforos.lovable.app/', source:'' }
 ];
 
 (function logicNestEnhancements(){
@@ -9,7 +11,7 @@ window.logicNestProjects = [
   const key='logicNestTheme';
   const prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
   const saved=localStorage.getItem(key);
-  const initial=saved|| (prefersDark?'dark':'light');
+  const initial=saved || (prefersDark?'dark':'light');
   root.setAttribute('data-theme',initial);
 
   const style=document.createElement('style');
