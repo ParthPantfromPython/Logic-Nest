@@ -8,11 +8,6 @@ window.logicNestProjects = [
 (function logicNestEnhancements(){
   const cfg=window.LOGIC_NEST_SUPABASE;
   const root=document.documentElement;
-  const key='logicNestTheme';
-  const prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const saved=localStorage.getItem(key);
-  const initial=saved || (prefersDark?'dark':'light');
-  root.setAttribute('data-theme',initial);
 
   const style=document.createElement('style');
   style.textContent=`
@@ -42,7 +37,7 @@ window.logicNestProjects = [
   toggle.type='button';
   toggle.setAttribute('aria-label','Toggle light and dark theme');
   const updateToggle=()=>{const dark=root.getAttribute('data-theme')!=='light';toggle.innerHTML=`<span class="logic-theme-dot">${dark?'☀':'☾'}</span><span>${dark?'Light mode':'Dark mode'}</span>`};
-  toggle.addEventListener('click',()=>{const next=root.getAttribute('data-theme')==='light'?'dark':'light';root.setAttribute('data-theme',next);localStorage.setItem(key,next);updateToggle()});
+  toggle.addEventListener('click',()=>{const next=root.getAttribute('data-theme')==='light'?'dark':'light';root.setAttribute('data-theme',next);localStorage.setItem('logicNestThemeChoice',next);updateToggle()});
   document.body.appendChild(toggle);
   updateToggle();
 
