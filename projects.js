@@ -21,3 +21,11 @@ window.logicNestProjects = [
   };
   document.head.appendChild(script);
 })();
+
+// Keep public YouTube buttons connected to the official Logic Nest channel.
+(function wireLogicNestYouTube(){
+  const channel='https://www.youtube.com/@Logic-Nest-26';
+  const wire=()=>document.querySelectorAll('a[href*="youtube.com/"]').forEach(a=>{a.href=channel;a.target='_blank';a.rel='noreferrer';});
+  wire();
+  new MutationObserver(wire).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['href']});
+})();
