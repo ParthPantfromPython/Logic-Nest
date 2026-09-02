@@ -1,0 +1,13 @@
+{
+  "name": "Logic Nest",
+  "short_name": "Logic Nest",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#070b14",
+  "theme_color": "#0a1020",
+  "description": "Logic Nest — coding, projects, problem solving, and learning.",
+  "icons": [
+    {"src":"Gemini_Generated_Image_f72yx0f72yx0f72y.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"Gemini_Generated_Image_f72yx0f72yx0f72y.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
