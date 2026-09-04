@@ -2,7 +2,8 @@ window.logicNestProjects = [
   { title:'Nexus AI', description:'Home Command Center — an AI-powered dashboard and productivity workspace.', tags:['AI','Dashboard','Web','Productivity'], icon:'NX', image:'Gemini_Generated_Image_zbt2ejzbt2ejzbt2.png', demo:'https://career-with-nexus-ai.lovable.app/home', source:'', featured:true },
   { title:'Interactive Periodic Table', description:'🌈 Modern chemistry explorer with an interactive periodic table experience.', tags:['Chemistry','Education','Interactive','JavaScript'], icon:'🧪', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://parthpantfrompython.github.io/Website/index.html', source:'', featured:false },
   { title:'Indigenous Art & Nature', description:'Explore indigenous art, culture, nature, and visual storytelling through an interactive web experience.', tags:['Art','Culture','Nature','Education','Web'], icon:'🌿', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://parthpantfrompython.github.io/Website/Home.html', source:'', featured:false },
-  { title:'JARVIS Online', description:'AI Assistant Dashboard with Voice, Chat & PC Control.', tags:['AI','Assistant','Voice','Chat','Dashboard'], icon:'JX', image:'Gemini_Generated_Image_zbt2ejzbt2ejzbt2.png', demo:'https://jarvisforos.lovable.app/', source:'', featured:false }
+  { title:'JARVIS Online', description:'AI Assistant Dashboard with Voice, Chat & PC Control.', tags:['AI','Assistant','Voice','Chat','Dashboard'], icon:'JX', image:'Gemini_Generated_Image_zbt2ejzbt2ejzbt2.png', demo:'https://jarvisforos.lovable.app/', source:'', featured:false },
+  { title:'Kids Needs Store', description:'🧸 A cheerful kids-focused online store experience for little things and big joy.', tags:['Ecommerce','Kids','Shopping','Replit','Web'], icon:'🛍️', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://kids-store--parthpant.replit.app/', source:'', featured:false }
 ];
 
 (function logicNestProjectSync(){
@@ -22,17 +23,11 @@ window.logicNestProjects = [
   document.head.appendChild(script);
 })();
 
-// Keep public YouTube buttons connected to the official Logic Nest channel.
 (function wireLogicNestYouTube(){
   const channel='https://www.youtube.com/@Logic-Nest-26';
-  document.querySelectorAll('a[href*="youtube.com/"]').forEach(a=>{
-    a.href=channel;
-    a.target='_blank';
-    a.rel='noreferrer';
-  });
+  document.querySelectorAll('a[href*="youtube.com/"]').forEach(a=>{a.href=channel;a.target='_blank';a.rel='noreferrer';});
 })();
 
-// Add lightweight featured labels and reveal motion without changing the existing renderer.
 (function refineLogicNestProjects(){
   const style=document.createElement('style');
   style.textContent=`
@@ -45,18 +40,14 @@ window.logicNestProjects = [
   `;
   document.head.appendChild(style);
   const decorate=()=>{
-    const grid=document.getElementById('projectGrid');
-    if(!grid) return;
+    const grid=document.getElementById('projectGrid'); if(!grid) return;
     const cards=[...grid.querySelectorAll('.project')];
     const source=Array.isArray(window.logicNestProjects)?window.logicNestProjects:[];
     cards.forEach((card,i)=>{
       const title=(card.querySelector('h3')?.textContent||'').trim();
       const item=source.find(p=>p.title===title)||source[i];
-      if(item?.featured && !card.querySelector('.ln-featured')){
-        const badge=document.createElement('span'); badge.className='ln-featured'; badge.textContent='Featured'; card.appendChild(badge);
-      }
-      card.classList.add('ln-project-reveal');
-      setTimeout(()=>card.classList.add('is-visible'),Math.min(i,8)*55);
+      if(item?.featured&&!card.querySelector('.ln-featured')){const badge=document.createElement('span');badge.className='ln-featured';badge.textContent='Featured';card.appendChild(badge)}
+      card.classList.add('ln-project-reveal'); setTimeout(()=>card.classList.add('is-visible'),Math.min(i,8)*55);
     });
   };
   const boot=()=>{const grid=document.getElementById('projectGrid');if(!grid)return;new MutationObserver(decorate).observe(grid,{childList:true,subtree:true});decorate()};
