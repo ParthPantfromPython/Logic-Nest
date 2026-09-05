@@ -9,6 +9,7 @@ window.logicNestProjects = [
 (function logicNestProjectSync(){
   const cfg=window.LOGIC_NEST_SUPABASE;
   if(!cfg) return;
+  const fallback=window.logicNestProjects.slice();
   const script=document.createElement('script');
   script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
   script.onload=async()=>{
@@ -16,7 +17,10 @@ window.logicNestProjects = [
       const sb=supabase.createClient(cfg.url,cfg.publishableKey);
       const {data,error}=await sb.from('projects').select('*').eq('published',true).order('created_at',{ascending:true});
       if(error||!Array.isArray(data)||!data.length) return;
-      window.logicNestProjects=data.map(p=>({title:p.title,description:p.description,tags:p.tags||[],icon:p.icon||'LN',image:p.image_url||'',demo:p.demo_url||'',source:p.source_url||'',featured:!!p.featured}));
+      const remote=data.map(p=>({title:p.title,description:p.description,tags:p.tags||[],icon:p.icon||'LN',image:p.image_url||'',demo:p.demo_url||'',source:p.source_url||'',featured:!!p.featured}));
+      const merged=[...fallback];
+      remote.forEach(item=>{const i=merged.findIndex(x=>x.title===item.title);if(i>=0) merged[i]={...merged[i],...item};else merged.push(item)});
+      window.logicNestProjects=merged;
       document.dispatchEvent(new CustomEvent('logicNestProjectsReady'));
     }catch(_){ }
   };
@@ -26,6 +30,24 @@ window.logicNestProjects = [
 (function wireLogicNestYouTube(){
   const channel='https://www.youtube.com/@Logic-Nest-26';
   document.querySelectorAll('a[href*="youtube.com/"]').forEach(a=>{a.href=channel;a.target='_blank';a.rel='noreferrer';});
+})();
+
+(function addLogicNestLabHub(){
+  const boot=()=>{
+    const topLab=document.querySelector('.links a[href="lab.html"]');
+    if(topLab) topLab.remove();
+    const projects=document.getElementById('projects');
+    if(!projects||document.getElementById('labHub')) return;
+    const section=document.createElement('section');
+    section.id='labHub';
+    section.className='logicLabHub';
+    section.innerHTML=`<div class="wrap"><div class="logicLabBox"><div><span class="eyebrow">LOGIC NEST LAB</span><h2>Build something of your own.</h2><p>Use the browser-based Lab to create, experiment, preview and refine HTML, CSS and JavaScript projects.</p><div class="logicLabTags"><span class="metaPill"><b>LIVE</b> sandbox</span><span class="metaPill">Multi-file</span><span class="metaPill">Checkpoints</span></div></div><div class="logicLabAction"><div class="logicLabOrb">⌘</div><a class="btn primary" href="lab-ultra.html">Open Lab →</a><span>Logic Nest Lab Ultra</span></div></div></div>`;
+    projects.insertAdjacentElement('afterend',section);
+    const style=document.createElement('style');
+    style.textContent=`.logicLabHub{padding:30px 0 72px}.logicLabBox{display:grid;grid-template-columns:1.12fr .88fr;gap:24px;align-items:center;padding:32px;border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));border-radius:24px;background:radial-gradient(circle at 88% 25%,color-mix(in srgb,var(--accent2) 12%,transparent),transparent 35%),linear-gradient(120deg,color-mix(in srgb,var(--panel) 96%,transparent),color-mix(in srgb,var(--accent) 6%,var(--panel)));box-shadow:var(--shadow)}.logicLabBox h2{margin:11px 0 8px;font-size:42px;line-height:1.03;letter-spacing:-.05em}.logicLabBox p{margin:0;max-width:680px;color:var(--muted)}.logicLabTags{display:flex;gap:8px;flex-wrap:wrap;margin-top:17px}.logicLabAction{min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1px solid var(--line);border-radius:20px;background:color-mix(in srgb,var(--panel) 78%,transparent)}.logicLabOrb{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;font:900 35px ui-monospace;color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));background:radial-gradient(circle,var(--glow),transparent 67%),var(--panel);box-shadow:0 0 55px color-mix(in srgb,var(--accent) 17%,transparent),inset 0 0 35px color-mix(in srgb,var(--accent2) 9%,transparent)}.logicLabAction>span{color:var(--muted);font-size:11px;font-weight:800}@media(max-width:760px){.logicLabBox{grid-template-columns:1fr}.logicLabAction{min-height:190px}.logicLabBox h2{font-size:34px}}`;
+    document.head.appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 })();
 
 (function refineLogicNestProjects(){
