@@ -6,30 +6,119 @@ window.logicNestProjects = [
   { title:'Kids Needs Store', description:'🧸 A cheerful kids-focused online store experience for little things and big joy.', tags:['Ecommerce','Kids','Shopping','Replit','Web'], icon:'🛍️', image:'Gemini_Generated_Image_f72yx0f72yx0f72y.png', demo:'https://kids-store--parthpant.replit.app/', source:'', featured:false }
 ];
 
-(function logicNestProjectSync(){
-  const cfg=window.LOGIC_NEST_SUPABASE;
-  if(!cfg) return;
+(function(){
   const fallback=window.logicNestProjects.slice();
-  const script=document.createElement('script');
-  script.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  script.onload=async()=>{
+  let allProjects=fallback.slice();
+  let activeFilter='All';
+  let query='';
+  let mounted=false;
+
+  const esc=(s='')=>String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'&#92;','"':'&quot;'}[c]));
+  const findByText=(selector,text)=>[...document.querySelectorAll(selector)].find(el=>(el.textContent||'').trim().toLowerCase().includes(text.toLowerCase()));
+
+  function normalizeRemote(rows){
+    return rows.map(p=>({
+      title:p.title||'Untitled Project',
+      description:p.description||'A Logic Nest project.',
+      tags:Array.isArray(p.tags)?p.tags:[], icon:p.icon||'LN',
+      image:p.image_url||'', demo:p.demo_url||'', source:p.source_url||'',
+      featured:!!p.featured, published:p.published!==false, remoteId:p.id||null
+    }));
+  }
+
+  function merged(remote){
+    const out=fallback.map(x=>({...x}));
+    remote.filter(x=>x.published!==false).forEach(item=>{
+      const i=out.findIndex(x=>x.title===item.title);
+      if(i>=0) out[i]={...out[i],...item}; else out.push(item);
+    });
+    return out;
+  }
+
+  function projectMarkup(p){
+    const img=p.image||'';
+    return `<article class="project" data-project-title="${esc(p.title)}">${p.featured?'<span class="featuredBadge">Featured</span>':''}<div class="projectImage">${img?`<img src="${esc(img)}" alt="${esc(p.title)} preview" loading="lazy">`:`<span class="fallbackIcon">${esc(p.icon||'LN')}</span>`}</div><div class="projectBody"><h3>${esc(p.title)}</h3><p>${esc(p.description)}</p><div class="chips">${(p.tags||[]).slice(0,5).map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div><div class="projectLinks">${p.demo?`<a class="projectLink" href="${esc(p.demo)}" target="_blank" rel="noreferrer">Live ↗</a>`:''}${p.source?`<a class="projectLink" href="${esc(p.source)}" target="_blank" rel="noreferrer">Source ↗</a>`:''}</div></div></article>`;
+  }
+
+  function renderFeatured(rows){
+    const featured=rows.find(x=>x.featured)||rows[0];
+    if(!featured) return;
+    const box=document.querySelector('.spotlightBox');
+    if(!box) return;
+    const copy=box.querySelector('.spotlightCopy');
+    const media=box.querySelector('.spotlightMedia');
+    if(copy){
+      copy.innerHTML=`<span class="eyebrow">FEATURED BUILD</span><h2>${esc(featured.title)}</h2><p>${esc(featured.description||'Featured Logic Nest project.')}</p><div class="spotlightTags">${(featured.tags||[]).slice(0,5).map(t=>`<span class="metaPill">${esc(t)}</span>`).join('')}</div><div class="actions" style="margin-top:20px">${featured.demo?`<a class="btn primary" href="${esc(featured.demo)}" target="_blank" rel="noreferrer">Open project ↗</a>`:''}${featured.source?`<a class="btn secondary" href="${esc(featured.source)}" target="_blank" rel="noreferrer">View source ↗</a>`:''}</div>`;
+    }
+    if(media){media.innerHTML=featured.image?`<img src="${esc(featured.image)}" alt="${esc(featured.title)} preview" loading="eager"><div class="spotlightMediaShade"></div>`:`<div style="height:100%;min-height:290px;display:grid;place-items:center;font:900 42px ui-monospace;color:var(--accent)">${esc(featured.icon||'LN')}</div>`;}
+  }
+
+  function updateStats(rows){
+    const allStats=[...document.querySelectorAll('.stats .stat')];
+    allStats.forEach(card=>{
+      const label=(card.querySelector('span')?.textContent||'').trim().toLowerCase();
+      const value=card.querySelector('strong')||card.querySelector('b');
+      if(!value) return;
+      if(label.includes('published')) value.textContent=String(rows.filter(p=>p.published!==false).length);
+      else if(label.includes('idea')) value.textContent='∞';
+      else if(label.includes('track')) value.textContent='3';
+      else if(label.includes('goal')) value.textContent='1';
+    });
+  }
+
+  function render(){
+    const grid=document.getElementById('projectGrid');
+    if(!grid) return;
+    const filtered=allProjects.filter(p=>{
+      const q=query.trim().toLowerCase();
+      const matchesQuery=!q||`${p.title} ${p.description} ${(p.tags||[]).join(' ')}`.toLowerCase().includes(q);
+      const matchesFilter=activeFilter==='All'||(activeFilter==='Featured'&&p.featured)||(activeFilter!=='Featured'&&((p.tags||[]).some(t=>String(t).toLowerCase()===activeFilter.toLowerCase())));
+      return matchesQuery&&matchesFilter;
+    });
+    grid.innerHTML=filtered.length?filtered.map(projectMarkup).join(''):'<div class="empty">No projects match this search yet.</div>';
+    renderFeatured(allProjects);
+    updateStats(allProjects);
+  }
+
+  function wire(){
+    if(mounted||!document.getElementById('projectGrid')) return;
+    mounted=true;
+    const search=document.querySelector('#projects .search')||document.querySelector('input[placeholder*="Search projects"]');
+    if(search) search.addEventListener('input',e=>{query=e.target.value;render();});
+    document.querySelectorAll('#projects .filter').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('#projects .filter').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      activeFilter=btn.textContent.trim()||'All';
+      render();
+    }));
+    render();
+    document.dispatchEvent(new CustomEvent('logicNestProjectsReady'));
+  }
+
+  async function sync(){
     try{
-      const sb=supabase.createClient(cfg.url,cfg.publishableKey);
+      const cfg=window.LOGIC_NEST_SUPABASE;
+      if(!cfg||!window.supabase) return;
+      const sb=window.supabase.createClient(cfg.url,cfg.publishableKey);
       const {data,error}=await sb.from('projects').select('*').eq('published',true).order('created_at',{ascending:true});
       if(error||!Array.isArray(data)||!data.length) return;
-      const remote=data.map(p=>({title:p.title,description:p.description,tags:p.tags||[],icon:p.icon||'LN',image:p.image_url||'',demo:p.demo_url||'',source:p.source_url||'',featured:!!p.featured}));
-      const merged=[...fallback];
-      remote.forEach(item=>{const i=merged.findIndex(x=>x.title===item.title);if(i>=0) merged[i]={...merged[i],...item};else merged.push(item)});
-      window.logicNestProjects=merged;
-      document.dispatchEvent(new CustomEvent('logicNestProjectsReady'));
-    }catch(_){ }
-  };
-  document.head.appendChild(script);
-})();
+      allProjects=merged(normalizeRemote(data));
+      render();
+    }catch(e){ console.warn('Logic Nest project sync skipped:',e); }
+  }
 
-(function wireLogicNestYouTube(){
-  const channel='https://www.youtube.com/@Logic-Nest-26';
-  document.querySelectorAll('a[href*="youtube.com/"]').forEach(a=>{a.href=channel;a.target='_blank';a.rel='noreferrer';});
+  function boot(){
+    wire();
+    sync();
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
+
+  // Keep the public site resilient if another script finishes late.
+  const retry=setInterval(()=>{wire();if(mounted)clearInterval(retry)},250);
+
+  // Expose a tiny safe refresh hook for future admin changes.
+  window.refreshLogicNestProjects=async()=>{await sync();render();};
 })();
 
 (function addLogicNestLabHub(){
@@ -52,26 +141,9 @@ window.logicNestProjects = [
 
 (function refineLogicNestProjects(){
   const style=document.createElement('style');
-  style.textContent=`
-    .project{position:relative;overflow:hidden}
-    .project::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.04) 42%,transparent 60%);transform:translateX(-120%);transition:transform .7s ease}
-    .project:hover::after{transform:translateX(120%)}
-    .ln-featured{position:absolute;top:12px;right:12px;z-index:3;padding:6px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 18%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));color:var(--accent);font:900 10px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;backdrop-filter:blur(8px)}
-    .ln-project-reveal{opacity:0;transform:translateY(12px);transition:opacity .45s ease,transform .45s ease}
-    .ln-project-reveal.is-visible{opacity:1;transform:none}
-  `;
+  style.textContent=`.project{position:relative;overflow:hidden}.project::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.04) 42%,transparent 60%);transform:translateX(-120%);transition:transform .7s ease}.project:hover::after{transform:translateX(120%)}.ln-featured{position:absolute;top:12px;right:12px;z-index:3;padding:6px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 18%,var(--panel));border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));color:var(--accent);font:900 10px/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;backdrop-filter:blur(8px)}.ln-project-reveal{opacity:0;transform:translateY(12px);transition:opacity .45s ease,transform .45s ease}.ln-project-reveal.is-visible{opacity:1;transform:none}.spotlightMedia{position:relative;overflow:hidden}.spotlightMedia img{display:block;width:100%;height:100%;min-height:290px;object-fit:cover}.spotlightMediaShade{position:absolute;inset:0;background:linear-gradient(180deg,transparent 45%,rgba(3,8,15,.45))}`;
   document.head.appendChild(style);
-  const decorate=()=>{
-    const grid=document.getElementById('projectGrid'); if(!grid) return;
-    const cards=[...grid.querySelectorAll('.project')];
-    const source=Array.isArray(window.logicNestProjects)?window.logicNestProjects:[];
-    cards.forEach((card,i)=>{
-      const title=(card.querySelector('h3')?.textContent||'').trim();
-      const item=source.find(p=>p.title===title)||source[i];
-      if(item?.featured&&!card.querySelector('.ln-featured')){const badge=document.createElement('span');badge.className='ln-featured';badge.textContent='Featured';card.appendChild(badge)}
-      card.classList.add('ln-project-reveal'); setTimeout(()=>card.classList.add('is-visible'),Math.min(i,8)*55);
-    });
-  };
+  const decorate=()=>{const grid=document.getElementById('projectGrid');if(!grid)return;[...grid.querySelectorAll('.project')].forEach((card,i)=>{card.classList.add('ln-project-reveal');setTimeout(()=>card.classList.add('is-visible'),Math.min(i,8)*55)});};
   const boot=()=>{const grid=document.getElementById('projectGrid');if(!grid)return;new MutationObserver(decorate).observe(grid,{childList:true,subtree:true});decorate()};
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 })();
