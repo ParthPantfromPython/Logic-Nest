@@ -1,0 +1,26 @@
+name: Logic Nest Learning Hub — YouTube Sync
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync Learning Hub playlists
+        env:
+          SUPABASE_URL: https://lpynccsiitfhpqlbbxnf.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'Missing SUPABASE_SERVICE_ROLE_KEY GitHub secret'; exit 1; }
+          curl --fail-with-body -sS \
+            -X POST "$SUPABASE_URL/functions/v1/learning-youtube-sync" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}'
