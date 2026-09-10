@@ -1,4 +1,4 @@
-name: Fix Learning Hub course edit
+name: Fix Learning Hub course editor
 
 on:
   push:
@@ -9,26 +9,62 @@ permissions:
 
 jobs:
   patch:
-    if: github.event.head_commit.message != 'fix: repair Learning Hub course edit'
+    if: github.event.head_commit.message != 'fix: make Learning Hub course editor a modal'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Apply editor fix
+      - name: Turn course editor into modal
         shell: python
         run: |
           from pathlib import Path
           p = Path('admin-learning.html')
           s = p.read_text(encoding='utf-8')
-          old = "function editCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;editingCourse=c;"
-          new = "function editCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;document.querySelector('[data-tab=\"courses\"]').click();editingCourse=c;"
-          if old not in s:
-              raise SystemExit('editCourse target not found')
-          s = s.replace(old, new, 1)
-          old2 = "$('courseFormTitle').textContent='Edit course'}"
-          new2 = "$('courseFormTitle').textContent='Edit course';$('courseEditor').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('ctitle').focus(),250)}"
-          if old2 not in s:
-              raise SystemExit('editor tail target not found')
-          s = s.replace(old2, new2, 1)
+
+          css_anchor = '@media(max-width:620px){.stats{grid-template-columns:1fr 1fr}.formGrid{grid-template-columns:1fr}.full{grid-column:auto}.syncBox{grid-template-columns:1fr}.top{flex-wrap:wrap}}'
+          css = css_anchor + '.modal{display:none;position:fixed;inset:0;z-index:1000;padding:22px;align-items:center;justify-content:center;background:rgba(3,7,14,.78);backdrop-filter:blur(10px);overflow:auto}.modal.open{display:flex}.modalCard{width:min(920px,100%);max-height:92vh;overflow:auto;border:1px solid #ffffff18;border-radius:22px;background:#0c1422;box-shadow:0 40px 140px #000b;padding:18px}.modalCard .panelHead{position:sticky;top:0;background:#0c1422ef;z-index:2;padding-bottom:12px}.modalCard form{padding-bottom:4px}'
+          if css_anchor not in s: raise SystemExit('CSS anchor not found')
+          s = s.replace(css_anchor, css, 1)
+
+          old_open = '<div class="panel" id="courseEditor"><div class="panelHead">'
+          new_open = '<div class="modal" id="courseEditor"><div class="modalCard"><div class="panelHead">'
+          if old_open not in s: raise SystemExit('course editor opening tag not found')
+          s = s.replace(old_open, new_open, 1)
+
+          old_close = '</form></div></section>\n<section class="tab" id="tab-lessons">'
+          new_close = '</form></div></div></section>\n<section class="tab" id="tab-lessons">'
+          if old_close not in s: raise SystemExit('course editor closing tag not found')
+          s = s.replace(old_close, new_close, 1)
+
+          old_fn = "function editCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;editingCourse=c;"
+          new_fn = "function editCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;document.querySelector('[data-tab=\"courses\"]').click();editingCourse=c;$('courseEditor').classList.add('open');"
+          if old_fn not in s: raise SystemExit('editCourse function start not found')
+          s = s.replace(old_fn, new_fn, 1)
+
+          old_tail = "$('courseFormTitle').textContent='Edit course'}"
+          new_tail = "$('courseFormTitle').textContent='Edit course';setTimeout(()=>$('ctitle').focus(),120)}"
+          if old_tail not in s: raise SystemExit('editCourse tail not found')
+          s = s.replace(old_tail, new_tail, 1)
+
+          old_clear = "function clearCourse(){$('courseForm').reset();$('courseId').value='';$('courseFormTitle').textContent='Create course';syncOptions()}"
+          new_clear = "function clearCourse(){$('courseForm').reset();$('courseId').value='';$('courseFormTitle').textContent='Create course';syncOptions()}function closeCourseModal(){$('courseEditor').classList.remove('open');editingCourse=null}"
+          if old_clear not in s: raise SystemExit('clearCourse function not found')
+          s = s.replace(old_clear, new_clear, 1)
+
+          old_save = "await activity(id?'update':'create','course',id||null,`${payload.title} course ${id?'updated':'created'}`);clearCourse();say('courseMsg','Course saved.');await load()}"
+          new_save = "await activity(id?'update':'create','course',id||null,`${payload.title} course ${id?'updated':'created'}`);clearCourse();closeCourseModal();say('courseMsg','Course saved.');await load()}"
+          if old_save not in s: raise SystemExit('saveCourse completion not found')
+          s = s.replace(old_save, new_save, 1)
+
+          old_bind = "$('newCourse').onclick=clearCourse;$('cancelCourse').onclick=clearCourse;"
+          new_bind = "$('newCourse').onclick=()=>{clearCourse();$('courseEditor').classList.add('open');setTimeout(()=>$('ctitle').focus(),120)};$('cancelCourse').onclick=()=>{clearCourse();closeCourseModal()};"
+          if old_bind not in s: raise SystemExit('course button bindings not found')
+          s = s.replace(old_bind, new_bind, 1)
+
+          marker = "document.addEventListener('click',e=>{const t=e.target;if(t.dataset.editCourse)editCourse(t.dataset.editCourse);"
+          replacement = "$('courseEditor').addEventListener('click',e=>{if(e.target===e.currentTarget){clearCourse();closeCourseModal()}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('courseEditor').classList.contains('open')){clearCourse();closeCourseModal()}});document.addEventListener('click',e=>{const t=e.target;if(t.dataset.editCourse)editCourse(t.dataset.editCourse);"
+          if marker not in s: raise SystemExit('click handler marker not found')
+          s = s.replace(marker, replacement, 1)
+
           p.write_text(s, encoding='utf-8')
       - name: Commit fix and remove helper
         run: |
@@ -37,5 +73,5 @@ jobs:
           rm .github/workflows/fix-course-edit.yml
           git add admin-learning.html .github/workflows/fix-course-edit.yml
           git diff --cached --quiet && exit 0
-          git commit -m 'fix: repair Learning Hub course edit'
+          git commit -m 'fix: make Learning Hub course editor a modal'
           git push
