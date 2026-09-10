@@ -9,15 +9,14 @@ permissions:
 
 jobs:
   patch:
-    if: github.actor == 'github-actions[bot]' || github.event.head_commit.message != 'fix: repair Learning Hub course edit'
+    if: github.event.head_commit.message != 'fix: repair Learning Hub course edit'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch editor navigation
+      - name: Apply editor fix
         shell: python
         run: |
           from pathlib import Path
-          import re
           p = Path('admin-learning.html')
           s = p.read_text(encoding='utf-8')
           old = "function editCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;editingCourse=c;"
@@ -25,13 +24,17 @@ jobs:
           if old not in s:
               raise SystemExit('editCourse target not found')
           s = s.replace(old, new, 1)
-          s = s.replace("$('courseFormTitle').textContent='Edit course'}", "$('courseFormTitle').textContent='Edit course';$('courseEditor').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('ctitle').focus(),250)}", 1)
+          old2 = "$('courseFormTitle').textContent='Edit course'}"
+          new2 = "$('courseFormTitle').textContent='Edit course';$('courseEditor').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('ctitle').focus(),250)}"
+          if old2 not in s:
+              raise SystemExit('editor tail target not found')
+          s = s.replace(old2, new2, 1)
           p.write_text(s, encoding='utf-8')
-      - name: Commit patch and remove temporary workflow
+      - name: Commit fix and remove helper
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          rm -f .github/workflows/fix-course-edit.yml
+          rm .github/workflows/fix-course-edit.yml
           git add admin-learning.html .github/workflows/fix-course-edit.yml
           git diff --cached --quiet && exit 0
           git commit -m 'fix: repair Learning Hub course edit'
