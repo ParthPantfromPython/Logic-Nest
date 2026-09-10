@@ -23,6 +23,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Prepare Learning Hub course editor modal
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('admin-learning.html')
+          s = p.read_text(encoding='utf-8')
+
+          css_anchor = '@media(max-width:620px){.stats{grid-template-columns:1fr 1fr}.formGrid{grid-template-columns:1fr}.full{grid-column:auto}.syncBox{grid-template-columns:1fr}.top{flex-wrap:wrap}}'
+          css = css_anchor + '.modal{display:none;position:fixed;inset:0;z-index:1000;padding:22px;align-items:center;justify-content:center;background:rgba(3,7,14,.78);backdrop-filter:blur(10px);overflow:auto}.modal.open{display:flex}.modalCard{width:min(920px,100%);max-height:92vh;overflow:auto;border:1px solid #ffffff18;border-radius:22px;background:#0c1422;box-shadow:0 40px 140px #000b;padding:18px}.modalCard .panelHead{position:sticky;top:0;background:#0c1422ef;z-index:2;padding-bottom:12px}.modalCard form{padding-bottom:4px}'
+          if css_anchor in s and '.modal{display:none' not in s:
+              s = s.replace(css_anchor, css, 1)
+
+          s = s.replace('<div class="panel" id="courseEditor"><div class="panelHead">', '<div class="modal" id="courseEditor"><div class="modalCard"><div class="panelHead">', 1)
+          s = s.replace('</form></div></section>\n<section class="tab" id="tab-lessons">', '</form></div></div></section>\n<section class="tab" id="tab-lessons">', 1)
+
+          s = s.replace("function editCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;editingCourse=c;", "function editCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;document.querySelector('[data-tab=\"courses\"]').click();editingCourse=c;$('courseEditor').classList.add('open');", 1)
+          s = s.replace("$('courseFormTitle').textContent='Edit course'}", "$('courseFormTitle').textContent='Edit course';setTimeout(()=>$('ctitle').focus(),120)}", 1)
+          s = s.replace("function clearCourse(){$('courseForm').reset();$('courseId').value='';$('courseFormTitle').textContent='Create course';syncOptions()}", "function clearCourse(){$('courseForm').reset();$('courseId').value='';$('courseFormTitle').textContent='Create course';syncOptions()}function closeCourseModal(){$('courseEditor').classList.remove('open');editingCourse=null}", 1)
+          s = s.replace("await activity(id?'update':'create','course',id||null,`${payload.title} course ${id?'updated':'created'}`);clearCourse();say('courseMsg','Course saved.');await load()}", "await activity(id?'update':'create','course',id||null,`${payload.title} course ${id?'updated':'created'}`);clearCourse();closeCourseModal();say('courseMsg','Course saved.');await load()}", 1)
+          s = s.replace("$('newCourse').onclick=clearCourse;$('cancelCourse').onclick=clearCourse;", "$('newCourse').onclick=()=>{clearCourse();$('courseEditor').classList.add('open');setTimeout(()=>$('ctitle').focus(),120)};$('cancelCourse').onclick=()=>{clearCourse();closeCourseModal()};", 1)
+          click = "document.addEventListener('click',e=>{const t=e.target;if(t.dataset.editCourse)editCourse(t.dataset.editCourse);"
+          repl = "$('courseEditor').addEventListener('click',e=>{if(e.target===e.currentTarget){clearCourse();closeCourseModal()}});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('courseEditor').classList.contains('open')){clearCourse();closeCourseModal()}});document.addEventListener('click',e=>{const t=e.target;if(t.dataset.editCourse)editCourse(t.dataset.editCourse);"
+          s = s.replace(click, repl, 1)
+          p.write_text(s, encoding='utf-8')
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site
