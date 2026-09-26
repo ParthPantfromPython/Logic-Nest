@@ -167,17 +167,17 @@ function showAutocomplete(items){
  box.querySelectorAll(".acItem").forEach(el=>el.onclick=()=>acceptAutocomplete(Number(el.dataset.i)));
 }
 function autocompleteItems(){
- if(!isHTMLFile()&&!/\\.css$/i.test(project.active))return [];
+ if(!isHTMLFile()&&!/\.css$/i.test(project.active))return [];
  const ta=$("editor"),before=ta.value.slice(0,ta.selectionStart);
- if(/<\\/?[A-Za-z0-9:-]*$/.test(before)){
-  const m=before.match(/<\\/?([A-Za-z0-9:-]*)$/);const q=(m?.[1]||"").toLowerCase();
+ if(/<\/?[A-Za-z0-9:-]*$/.test(before)){
+  const m=before.match(/<\/?([A-Za-z0-9:-]*)$/);const q=(m?.[1]||"").toLowerCase();
   return HTML_TAGS.filter(x=>x.startsWith(q)).map(x=>({name:x,type:"tag"}));
  }
- const attr=before.match(/<[^<>]*\\s([A-Za-z:-][A-Za-z0-9:-]*)$/);
+ const attr=before.match(/<[^<>]*\s([A-Za-z:-][A-Za-z0-9:-]*)$/);
  if(attr&&isHTMLFile()){
   const q=attr[1].toLowerCase();return HTML_ATTRS.filter(x=>x.startsWith(q)).map(x=>({name:x,type:"attribute"}));
  }
- if(/\\.[A-Za-z0-9_-]*$|[A-Za-z-]+:\s*[^;{}]*$/.test(before)&&/\\.css$/i.test(project.active)){
+ if(/\.[A-Za-z0-9_-]*$|[A-Za-z-]+:\s*[^;{}]*$/.test(before)&&/\.css$/i.test(project.active)){
   const m=before.match(/([A-Za-z-]*)$/);const q=(m?.[1]||"").toLowerCase();
   return CSS_PROPS.filter(x=>x.startsWith(q)).map(x=>({name:x,type:"property"}));
  }
@@ -192,7 +192,7 @@ function acceptAutocomplete(i=0){
  let insert=item.name;
  if(item.type==="tag"){
   const prefix=before.slice(0,start);
-  const closing=/\\/\\s*$/.test(prefix);
+  const closing=/\/\s*$/.test(prefix);
   insert=closing?item.name+">":item.name+">";
   if(!closing)insert+="</"+item.name+">";
   else insert+=">";
