@@ -149,7 +149,7 @@ function handleEditorShortcuts(e){
  if(e.key==="Enter"){autoIndent();return;}
  if(e.key==="Backspace"&&ta.selectionStart===ta.selectionEnd&&/ {2}$/.test(ta.value.slice(0,pos))){e.preventDefault();ta.setRangeText("",pos-2,pos,"end");updateLines();return;}
  if(["(","[","{","\"","'"].includes(e.key)&&ta.selectionStart===ta.selectionEnd){
-  const pairs={"(" : ")", "[" : "]", "{" : "}", "\"": "\""", "'":"'"},close=pairs[e.key],next=ta.value.charAt(pos);
+  const pairs={"(" : ")", "[" : "]", "{" : "}", "\"": "\"", "'":"'"},close=pairs[e.key],next=ta.value.charAt(pos);
   if(next===close){e.preventDefault();ta.selectionStart=ta.selectionEnd=pos+1;return;}
   e.preventDefault();ta.setRangeText(e.key+close,pos,pos,"end");ta.selectionStart=ta.selectionEnd=pos+1;
  }
