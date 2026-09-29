@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin-learning.html
+Disallow: /upload-project.html
+Disallow: /manage-projects.html
+Disallow: /edit-project.html
+Sitemap: https://parthpantfrompython.github.io/Logic-Nest/sitemap.xml
