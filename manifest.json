@@ -1,12 +1,17 @@
 {
-  "name": "Logic Nest",
-  "short_name": "Logic Nest",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#070b14",
-  "theme_color": "#0a1020",
-  "description": "Logic Nest — coding, projects, problem solving, and learning.",
-  "icons": [
+  "name":"Logic Nest — Learn. Build. Think.",
+  "short_name":"Logic Nest",
+  "id":"./",
+  "start_url":"./index.html",
+  "scope":"./",
+  "display":"standalone",
+  "orientation":"any",
+  "background_color":"#070b14",
+  "theme_color":"#0a1020",
+  "description":"Logic Nest — a coding portfolio, Learning Hub, project showcase and browser IDE.",
+  "categories":["education","developer","productivity"],
+  "lang":"en",
+  "icons":[
     {"src":"Gemini_Generated_Image_f72yx0f72yx0f72y.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
     {"src":"Gemini_Generated_Image_f72yx0f72yx0f72y.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
