@@ -21,7 +21,7 @@
 <main class="main">
 <aside class="activity"><button class="active">▤</button><button>⌕</button><button>⑂</button><button>▷</button><button>▦</button><div class="bottom"><button>⚙</button></div></aside>
 <aside class="explorer"><div class="cap">EXPLORER</div><div class="explorerHead"><span>LOGIC NEST PROJECT</span><span><button class="icon" id="newFile">＋</button><button class="icon" id="refresh">↻</button></span></div><div class="tree" id="tree"></div><div class="foot"><button class="mini" id="run">▶ Run</button><button class="mini" id="build">⚡ Build / Preview</button><button class="mini" id="save">💾 Save Workspace</button></div></aside>
-<section class="editorArea"><div class="tabs" id="tabs"></div><div class="wrap"><div class="monaco" id="monaco"></div><div class="actions"><button id="format">Format</button><button id="command">⌘⇧P</button></div><div class="loading" id="loading"><div><div class="spin"></div><div style="margin-top:9px;font-size:10px">Loading editor…</div></div></div></div><div class="status"><span id="stateStatus">Ready</span><span id="language">HTML</span><span>UTF-8</span><span>Spaces: 2</span><span id="cursor">Ln 1, Col 1</span><span class="right" id="runtime">Runtime: Web</span><span class="a">Logic Nest</span></div></section>
+<section class="editorArea"><div class="tabs" id="tabs"></div><div class="wrap"><div class="monaco" id="monaco"></div><textarea id="fallbackEditor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" style="display:none;position:absolute;inset:0;width:100%;height:100%;resize:none;border:0;outline:0;background:#0f1115;color:#e7eaf0;padding:12px 55px 20px 55px;font:13px/21px Consolas,monospace;tab-size:2"></textarea><div class="actions"><button id="format">Format</button><button id="command">⌘⇧P</button></div><div class="loading" id="loading"><div><div class="spin"></div><div style="margin-top:9px;font-size:10px">Loading editor…</div></div></div></div><div class="status"><span id="stateStatus">Ready</span><span id="language">HTML</span><span>UTF-8</span><span>Spaces: 2</span><span id="cursor">Ln 1, Col 1</span><span class="right" id="runtime">Runtime: Web</span><span class="a">Logic Nest</span></div></section>
 <aside class="rightPane"><div class="previewHead"><span id="previewTitle">WEB PREVIEW</span><div class="previewTools"><button id="open">↗</button><button id="reload">↻</button></div></div><div class="frame"><iframe id="preview" sandbox="allow-scripts allow-forms allow-modals"></iframe><div class="pyout" id="pyout"><div class="outhead">PYTHON OUTPUT</div><div class="outbody" id="pybody"></div></div></div><div class="bottom"><div class="btabs"><button class="bt active" data-p="terminal">TERMINAL</button><button class="bt" data-p="problems">PROBLEMS</button><button class="bt" data-p="packages">PYTHON PACKAGES</button><div class="sp"></div><button class="bt" id="clear">Clear</button></div><div class="bbody"><div class="terminal" id="terminal"><span class="p">logic-nest</span> $ Ultra IDE ready.</div><div class="panel" id="problems"></div><div class="panel" id="packages"><div class="pkgs" id="pkgList"></div></div></div></div></aside>
 </main></div>
 <div class="palette" id="palette"><input id="paletteInput" placeholder="Search commands…"><div class="cmds" id="cmds"></div></div><div class="toast" id="toast"></div>
@@ -35,7 +35,7 @@ const starter={
 "main.py":"import math\\nprint(\"Logic Nest Python runtime is ready!\")\\nprint(\"sqrt(144) =\",math.sqrt(144))\\n\\n# Try: import numpy as np; import pandas as pd; print(np.arange(5))",
 "README.md":"# Logic Nest Lab\\n\\nVS Code-style browser IDE with a WebAssembly Python runtime."
 };
-let state={files:{...starter},active:"index.html",open:["index.html"],dirty:false},editor=null,models={},worker=null,pyReady=false,cmds=[],cmdIndex=0;
+let state={files:{...starter},active:"index.html",open:["index.html"],dirty:false},editor=null,models={},worker=null,pyReady=false,cmds=[],cmdIndex=0,fallbackMode=false,fallbackModels={};
 function toast(x){$("toast").textContent=x;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1800)}
 function ext(n){return(n.split(".").pop()||"").toLowerCase()}
 function lang(n){return({html:"html",htm:"html",css:"css",js:"javascript",json:"json",py:"python",md:"markdown",ts:"typescript",sql:"sql",java:"java",cpp:"cpp",c:"c",php:"php"})[ext(n)]||"plaintext"}
@@ -45,7 +45,15 @@ function setStatus(x){$("stateStatus").textContent=x}
 function sync(){if(editor&&models[state.active])state.files[state.active]=models[state.active].getValue()}
 function save(){sync();localStorage.setItem(KEY,JSON.stringify(state));state.dirty=false;setStatus("Saved");toast("Workspace saved")}
 function load(){try{let x=JSON.parse(localStorage.getItem(KEY)||"null");if(x&&x.files){state=x;state.open=Array.isArray(state.open)?state.open:["index.html"];state.active=state.files[state.active]!==undefined?state.active:Object.keys(state.files)[0]}}catch(e){}}
-function makeModel(n){if(models[n])return models[n];models[n]=monaco.editor.createModel(state.files[n]||"",lang(n),monaco.Uri.parse("inmemory://logic-nest/"+encodeURIComponent(n)));return models[n]}
+function makeModel(n){
+ if(fallbackMode){
+  if(!fallbackModels[n]){let value=state.files[n]||"";fallbackModels[n]={getValue:()=>value,setValue:v=>{value=v},_get:()=>value};}
+  return fallbackModels[n];
+ }
+ if(models[n])return models[n];
+ models[n]=monaco.editor.createModel(state.files[n]||"",lang(n),monaco.Uri.parse("inmemory://logic-nest/"+encodeURIComponent(n)));
+ return models[n]
+}
 function renderTree(){let t=$("tree");t.innerHTML="";Object.keys(state.files).sort().forEach(n=>{let b=document.createElement("button");b.className="file "+(n===state.active?"active":"");b.innerHTML=ico(n)+"<span>"+n+"</span>";b.onclick=()=>openFile(n);t.appendChild(b)})}
 function renderTabs(){let t=$("tabs");t.innerHTML="";state.open.forEach(n=>{let b=document.createElement("div");b.className="tab "+(n===state.active?"active":"");b.innerHTML=ico(n)+"<span>"+n.split("/").pop()+"</span><button class=\"close\">×</button>";b.onclick=e=>e.target.classList.contains("close")?closeFile(n):openFile(n);t.appendChild(b)})}
 function openFile(n){sync();if(!state.open.includes(n))state.open.push(n);state.active=n;editor.setModel(makeModel(n));renderTree();renderTabs();$("language").textContent=lang(n).toUpperCase();$("runtime").textContent=ext(n)==="py"?"Runtime: Pyodide":"Runtime: Web";$("previewTitle").textContent=ext(n)==="py"?"PYTHON OUTPUT":"WEB PREVIEW";setStatus(state.dirty?"Modified":"Ready");editor.focus()}
@@ -53,7 +61,7 @@ function closeFile(n){state.open=state.open.filter(x=>x!==n);if(!state.open.leng
 function addFile(){let n=prompt("New file name","app.py");if(!n)return;if(state.files[n]!==undefined)return toast("File already exists");state.files[n]="";state.open.push(n);renderTree();openFile(n);state.dirty=true}
 function renameFile(){let o=state.active,n=prompt("Rename file",o);if(!n||n===o)return;if(state.files[n]!==undefined)return toast("File already exists");state.files[n]=state.files[o];delete state.files[o];if(models[o]){models[n]=models[o];delete models[o]}state.open=state.open.map(x=>x===o?n:x);state.active=n;renderTree();renderTabs();openFile(n);state.dirty=true}
 function deleteFile(){if(["index.html","style.css","script.js","main.py","README.md"].includes(state.active))return toast("Starter files are protected");if(!confirm("Delete "+state.active+"?"))return;delete state.files[state.active];if(models[state.active])models[state.active].dispose();state.open=state.open.filter(x=>x!==state.active);state.active=state.open[0]||Object.keys(state.files)[0];openFile(state.active);state.dirty=true}
-function format(){editor?.getAction("editor.action.formatDocument")?.run()}
+function format(){if(fallbackMode){toast("Install-free fallback editor active; use the code formatter in a supported browser session");return}editor?.getAction("editor.action.formatDocument")?.run()}
 function web(){sync();let h=state.files["index.html"]||"",c=state.files["style.css"]||"",j=state.files["script.js"]||"";h=h.replace(/<link[^>]+href=[\"']style\\.css[\"'][^>]*>/i,"<style>"+c+"</style>");h=h.replace(/<script[^>]+src=[\"']script\\.js[\"'][^>]*><\\/script>/i,"<script>"+j.replace(/<\\/script/gi,"<\\\\/script")+"<\\/script>");$("preview").srcdoc=h;$("pyout").classList.remove("show");setStatus("Built");log("web $ build complete")}
 function openPreview(){web();let w=window.open("");if(!w)return toast("Allow popups for Logic Nest Lab");w.document.write($("preview").srcdoc);w.document.close()}
 const pkgMap={numpy:"numpy",pandas:"pandas",matplotlib:"matplotlib",scipy:"scipy",sympy:"sympy",sklearn:"scikit-learn",statsmodels:"statsmodels",networkx:"networkx",PIL:"pillow",openpyxl:"openpyxl",requests:"requests",bs4:"beautifulsoup4",lxml:"lxml",seaborn:"seaborn",yaml:"pyyaml"};
@@ -69,5 +77,41 @@ function showPalette(){cmdIndex=0;renderCommands();$("palette").classList.add("s
 function renderCommands(){let q=$("paletteInput").value.toLowerCase(),box=$("cmds");box.innerHTML="";commands.filter(x=>x[0].toLowerCase().includes(q)).forEach((x,i)=>{let d=document.createElement("div");d.className="cmd "+(i===cmdIndex?"sel":"");d.innerHTML="<span>"+x[0]+"</span><kbd>"+x[1]+"</kbd>";d.onclick=()=>{x[2]();hidePalette()};box.appendChild(d)})}
 $("newFile").onclick=addFile;$("refresh").onclick=()=>{renderTree();renderTabs();toast("Explorer refreshed")};$("run").onclick=()=>ext(state.active)==="py"?runPython():web();$("build").onclick=()=>ext(state.active)==="py"?runPython():web();$("save").onclick=save;$("format").onclick=format;$("open").onclick=openPreview;$("reload").onclick=web;$("clear").onclick=()=>$("terminal").textContent="logic-nest $ terminal cleared";$("command").onclick=showPalette;document.querySelectorAll(".menu").forEach(x=>x.onclick=showPalette);document.querySelectorAll(".bt").forEach(x=>x.onclick=()=>panel(x.dataset.p));$("paletteInput").oninput=()=>{cmdIndex=0;renderCommands()};$("paletteInput").onkeydown=e=>{let a=[...$("cmds").children];if(e.key==="ArrowDown"){e.preventDefault();cmdIndex=Math.min(a.length-1,cmdIndex+1);renderCommands()}if(e.key==="ArrowUp"){e.preventDefault();cmdIndex=Math.max(0,cmdIndex-1);renderCommands()}if(e.key==="Enter"&&a[cmdIndex])a[cmdIndex].click();if(e.key==="Escape")hidePalette()};
 document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key.toLowerCase()==="p"){e.preventDefault();showPalette()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();save()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="n"){e.preventDefault();addFile()}if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();ext(state.active)==="py"?runPython():web()}if(e.key==="F6"){e.preventDefault();runPython()}if(e.key==="Escape")hidePalette()});
-function setup(){require.config({paths:{vs:"https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs"}});require(["vs/editor/editor.main"],()=>{monaco.editor.defineTheme("logic-nest",{base:"vs-dark",inherit:true,rules:[],colors:{"editor.background":"#0f1115","editorGutter.background":"#0f1115","editorLineNumber.foreground":"#4f5662","editorCursor.foreground":"#70f4d0","editor.selectionBackground":"#264f78"}});editor=monaco.editor.create($("monaco"),{theme:"logic-nest",fontFamily:"Cascadia Code,Consolas,monospace",fontSize:13,lineHeight:21,minimap:{enabled:true},tabSize:2,insertSpaces:true,automaticLayout:true,scrollBeyondLastLine:false,bracketPairColorization:{enabled:true},guides:{bracketPairs:true},autoClosingBrackets:"always",autoClosingQuotes:"always",autoIndent:"full",formatOnPaste:true,formatOnType:true,quickSuggestions:true});monaco.languages.registerCompletionItemProvider("python",{provideCompletionItems:()=>({suggestions:["print","len","range","enumerate","numpy","pandas","matplotlib","scipy","sympy","sklearn","networkx","requests","import","from","def","class","for","while","if","elif","else","try","except","with","async","await"].map(x=>({label:x,kind:monaco.languages.CompletionItemKind.Text,insertText:x}))})});load();Object.keys(state.files).forEach(makeModel);renderTree();renderTabs();openFile(state.active);showPackages();initPython();editor.onDidChangeModelContent(()=>{state.dirty=true;setStatus("Modified")});editor.onDidChangeCursorPosition(e=>$("cursor").textContent="Ln "+e.position.lineNumber+", Col "+e.position.column);$("loading").classList.add("hide")})}setup();
-</script></body></html>
+function startFallback(){
+ if(fallbackMode)return;
+ fallbackMode=true;
+ const host=$("monaco"),ta=$("fallbackEditor");
+ host.style.display="none";ta.style.display="block";
+ editor={
+  _model:null,
+  setModel(m){this._model=m;ta.value=m.getValue()},
+  getValue(){return ta.value},
+  focus(){ta.focus()},
+  getAction(){return{run:()=>{}}},
+  onDidChangeModelContent(fn){ta.addEventListener("input",fn)},
+  onDidChangeCursorPosition(fn){ta.addEventListener("keyup",()=>{let before=ta.value.slice(0,ta.selectionStart),lines=before.split("\n");fn({position:{lineNumber:lines.length,column:lines.at(-1).length+1}})})}
+ };
+ ta.addEventListener("input",()=>{let m=fallbackModels[state.active];if(m)m.setValue(ta.value)});
+ load();Object.keys(state.files).forEach(makeModel);renderTree();renderTabs();openFile(state.active);showPackages();initPython();
+ editor.onDidChangeModelContent(()=>{state.dirty=true;setStatus("Modified")});
+ editor.onDidChangeCursorPosition(e=>$("cursor").textContent="Ln "+e.position.lineNumber+", Col "+e.position.column);
+ $("loading").classList.add("hide");setStatus("Fallback editor ready");toast("Editor loaded in compatibility mode")
+}
+function setup(){
+ let finished=false;
+ const fallbackTimer=setTimeout(()=>{if(!finished)startFallback()},7000);
+ if(typeof window.require!=="function"){clearTimeout(fallbackTimer);startFallback();return}
+ window.require.config({paths:{vs:"https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs"}});
+ window.require(["vs/editor/editor.main"],()=>{
+  if(finished)return;finished=true;clearTimeout(fallbackTimer);
+  try{
+   monaco.editor.defineTheme("logic-nest",{base:"vs-dark",inherit:true,rules:[],colors:{"editor.background":"#0f1115","editorGutter.background":"#0f1115","editorLineNumber.foreground":"#4f5662","editorCursor.foreground":"#70f4d0","editor.selectionBackground":"#264f78"}});
+   editor=monaco.editor.create($("monaco"),{theme:"logic-nest",fontFamily:"Cascadia Code,Consolas,monospace",fontSize:13,lineHeight:21,minimap:{enabled:true},tabSize:2,insertSpaces:true,automaticLayout:true,scrollBeyondLastLine:false,bracketPairColorization:{enabled:true},guides:{bracketPairs:true},autoClosingBrackets:"always",autoClosingQuotes:"always",autoIndent:"full",formatOnPaste:true,formatOnType:true,quickSuggestions:true});
+   monaco.languages.registerCompletionItemProvider("python",{provideCompletionItems:()=>({suggestions:["print","len","range","enumerate","numpy","pandas","matplotlib","scipy","sympy","sklearn","networkx","requests","import","from","def","class","for","while","if","elif","else","try","except","with","async","await"].map(x=>({label:x,kind:monaco.languages.CompletionItemKind.Text,insertText:x}))})});
+   load();Object.keys(state.files).forEach(makeModel);renderTree();renderTabs();openFile(state.active);showPackages();initPython();
+   editor.onDidChangeModelContent(()=>{state.dirty=true;setStatus("Modified")});
+   editor.onDidChangeCursorPosition(e=>$("cursor").textContent="Ln "+e.position.lineNumber+", Col "+e.position.column);
+   $("loading").classList.add("hide");setStatus("Editor ready")
+  }catch(err){console.error(err);finished=false;startFallback()}
+ },err=>{if(!finished){finished=true;clearTimeout(fallbackTimer);startFallback()}});
+}</script></body></html>
