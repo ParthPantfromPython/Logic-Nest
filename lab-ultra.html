@@ -126,7 +126,7 @@ function autoCloseHTML(){}function autoIndent(){
  const ta=$("editor"),pos=ta.selectionStart,text=ta.value,lineStart=text.lastIndexOf("\\n",pos-1)+1,current=text.slice(lineStart,pos),base=(current.match(/^\\s*/)||[""])[0];
  let indent=base;
  if(isHTMLFile()){
-  const opens=(current.match(/<([A-Za-z][A-Za-z0-9:-]*)(?:\\s[^<>]*?)?>/g)||[]).filter(x=>!/\\/>$/.test(x)&&!/^<\\s*(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)\\b/i.test(x)).length;
+  const opens=(current.match(/<([A-Za-z][A-Za-z0-9:-]*)[^<>]*>/g)||[]).filter(x=>!/\\/>$/.test(x)&&!/^<\\s*(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)\\b/i.test(x)).length;
   const closes=(current.match(/<\\/([A-Za-z][A-Za-z0-9:-]*)\\s*>/g)||[]).length;
   if(opens>closes)indent+="  ";
  }
@@ -135,11 +135,11 @@ function autoCloseHTML(){}function autoIndent(){
 function handleEditorShortcuts(e){
  const ta=$("editor"),pos=ta.selectionStart;
  if(e.key===">"&&isHTMLFile()&&ta.selectionStart===ta.selectionEnd){
-  const before=ta.value.slice(0,pos),match=before.match(/<([A-Za-z][A-Za-z0-9:-]*)(?:\\s[^<>]*?)?$/);
+  const before=ta.value.slice(0,pos),match=before.match(/<([A-Za-z][A-Za-z0-9:-]*)[^<>]*$/);
   if(match){
    const tag=match[1],low=tag.toLowerCase();
    const voids=new Set(["area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"]);
-   const closing=before.match(/<\\/([A-Za-z][A-Za-z0-9:-]*)[^<>]*$/);
+   const closing=before.match(/<\/([A-Za-z][A-Za-z0-9:-]*)[^<>]*$/);
    const already=new RegExp("^\\s*</"+low+"\\s*>","i").test(ta.value.slice(pos));
    e.preventDefault();
    if(closing||voids.has(low)||already){
