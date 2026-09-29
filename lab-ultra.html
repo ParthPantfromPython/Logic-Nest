@@ -42,7 +42,7 @@ function lang(n){return({html:"html",htm:"html",css:"css",js:"javascript",json:"
 function ico(n){let e=ext(n),m={html:"◆",css:"◈",js:"◉",py:"🐍",json:"◇",md:"M",java:"☕",cpp:"C++",c:"C",php:"◆"};return '<span class="fi '+(e||"other")+'">'+(m[e]||"•")+"</span>"}
 function log(x){$("terminal").textContent+="\\n"+x;$("terminal").scrollTop=$("terminal").scrollHeight}
 function setStatus(x){$("stateStatus").textContent=x}
-function sync(){if(editor&&models[state.active])state.files[state.active]=models[state.active].getValue()}
+function sync(){if(!editor)return;if(fallbackMode){state.files[state.active]=editor.getValue();if(fallbackModels[state.active])fallbackModels[state.active].setValue(editor.getValue());return}if(models[state.active])state.files[state.active]=models[state.active].getValue()}
 function save(){sync();localStorage.setItem(KEY,JSON.stringify(state));state.dirty=false;setStatus("Saved");toast("Workspace saved")}
 function load(){try{let x=JSON.parse(localStorage.getItem(KEY)||"null");if(x&&x.files){state=x;state.open=Array.isArray(state.open)?state.open:["index.html"];state.active=state.files[state.active]!==undefined?state.active:Object.keys(state.files)[0]}}catch(e){}}
 function makeModel(n){
