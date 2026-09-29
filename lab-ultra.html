@@ -122,16 +122,7 @@ function formatCSS(v){
   .replace(/^  ([^{]+) \\{$/gm,"$1 {");
 }
 function isHTMLFile(){return /\\.html?$/i.test(project.active);}
-function autoCloseHTML(e){
- if(!isHTMLFile()||e.inputType!=="insertText"||e.data!==">")return;
- const ta=$("editor"),pos=ta.selectionStart,before=ta.value.slice(0,pos),m=before.match(/<([A-Za-z][A-Za-z0-9:-]*)(?:\\s[^<>]*?)?>$/);
- if(!m)return;
- const tag=m[1],low=tag.toLowerCase(),voids=new Set(["area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"]);
- if(voids.has(low)||/\\/>$/.test(before)||new RegExp("^\\s*</"+low+"\\s*>","i").test(ta.value.slice(pos)))return;
- ta.setRangeText("</"+tag+">",pos,pos,"start");
- ta.selectionStart=ta.selectionEnd=pos;updateLines();
-}
-function autoIndent(){
+function autoCloseHTML(){}function autoIndent(){
  const ta=$("editor"),pos=ta.selectionStart,text=ta.value,lineStart=text.lastIndexOf("\\n",pos-1)+1,current=text.slice(lineStart,pos),base=(current.match(/^\\s*/)||[""])[0];
  let indent=base;
  if(isHTMLFile()){
@@ -143,6 +134,27 @@ function autoIndent(){
 }
 function handleEditorShortcuts(e){
  const ta=$("editor"),pos=ta.selectionStart;
+ if(e.key===">"&&isHTMLFile()&&ta.selectionStart===ta.selectionEnd){
+  const before=ta.value.slice(0,pos),match=before.match(/<([A-Za-z][A-Za-z0-9:-]*)(?:\\s[^<>]*?)?$/);
+  if(match){
+   const tag=match[1],low=tag.toLowerCase();
+   const voids=new Set(["area","base","br","col","embed","hr","img","input","link","meta","param","source","track","wbr"]);
+   const closing=before.match(/<\\/([A-Za-z][A-Za-z0-9:-]*)[^<>]*$/);
+   const already=new RegExp("^\\s*</"+low+"\\s*>","i").test(ta.value.slice(pos));
+   e.preventDefault();
+   if(closing||voids.has(low)||already){
+    ta.setRangeText(">",pos,pos,"end");
+   }else{
+    ta.setRangeText("></"+tag+">",pos,pos,"end");
+    ta.selectionStart=ta.selectionEnd=pos+1;
+   }
+   project.files[project.active]=ta.value;
+   updateLines();
+   changes++;$("changes").textContent=changes;$("editStatus").textContent="EDITING";
+   hideAutocomplete();
+   return;
+  }
+ }
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();saveLocal();toast("Saved locally");return;}
  if(e.altKey&&e.key.toLowerCase()==="f"){e.preventDefault();$("search").focus();return;}
  if(e.key==="Tab"){e.preventDefault();const a=ta.selectionStart,b=ta.selectionEnd;ta.setRangeText("  ",a,b,"end");project.files[project.active]=ta.value;updateLines();return;}
@@ -216,7 +228,7 @@ function renderCommands(q=""){const b=$("cmdList");b.innerHTML="";commands.filte
 $("name").addEventListener("input",()=>{project.name=$("name").value;changes++;$("changes").textContent=changes;$("editStatus").textContent="EDITING";});
 $("editor").addEventListener("input",()=>{project.files[project.active]=$("editor").value;changes++;$("changes").textContent=changes;$("editStatus").textContent="EDITING";updateLines();});
 $("editor").addEventListener("scroll",()=>$("lines").scrollTop=$("editor").scrollTop);
-$("editor").addEventListener("input",e=>{autoCloseHTML(e);setTimeout(refreshAutocomplete,0);});
+$("editor").addEventListener("input",()=>{setTimeout(refreshAutocomplete,0);});
 $("editor").addEventListener("keydown",e=>{
  if($("autocomplete").classList.contains("show")){
   if(e.key==="ArrowDown"){e.preventDefault();acIndex=Math.min(acItems.length-1,acIndex+1);renderACSelection();return;}
